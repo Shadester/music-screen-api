@@ -76,7 +76,7 @@ def print_text_to_ink(track, artist, album, stat1 = "", stat2 = "", stat3 = "", 
     global line_y
     line_y = 0
 
-    if (rotate is not 0) and (rotate is not 180):
+    if (rotate != 0) and (rotate != 180):
         # quits out with error if you ignored the comment above
         exit ("Rotation can only be 0 or 180")
 
@@ -95,7 +95,7 @@ def print_text_to_ink(track, artist, album, stat1 = "", stat2 = "", stat3 = "", 
             img.putpixel((x, y), background_colour)
 
     # work out if we are in detailed mode or summary mode based on whether we have been passed stat1 or not
-    if stat1 is not "":
+    if stat1 != "":
         # we are in detailed mode
         # write the various lines to the image
         write_new_line (track, detail_fontsize_for_track, "center")
