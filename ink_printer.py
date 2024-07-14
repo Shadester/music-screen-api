@@ -31,23 +31,25 @@ summary_gap_between_artist_and_album = 20
 summary_fontsize_for_album = 27
 
 # Set up the correct display and scaling factors
-inky_display = InkyWHAT("black")
+inky_display = InkyWHAT("red")
 inky_display.set_border(inky_display.BLACK)
 x = 0
 y = 0
 if inverted == True:
     foreground_colour = inky_display.WHITE
     background_colour = inky_display.BLACK
+    accent_colour = inky_display.RED
 else:  
     foreground_colour = inky_display.BLACK
     background_colour = inky_display.WHITE
+    accent_colour = inky_display.RED
 
 # find the size of the display
 display_width = inky_display.WIDTH
 display_height = inky_display.HEIGHT
 
 # this function prints a new line to the image
-def write_new_line(text_to_write, font_size, alignment = "center", reflow=False):
+def write_new_line(text_to_write, font_size, alignment = "center", reflow=False, colour=foreground_colour):
     global line_y
     
     # set font - you can change this to others defined at the top of the script if you like
@@ -64,7 +66,7 @@ def write_new_line(text_to_write, font_size, alignment = "center", reflow=False)
         line_x = left_padding
 
     # write text to the canvas
-    draw.text((line_x, line_y), text_to_write, foreground_colour, font=font)
+    draw.text((line_x, line_y), text_to_write, colour, font=font)
     print ("Printing to ink >>> " + text_to_write)
     
     # move to next line
@@ -97,7 +99,7 @@ def print_text_to_ink(track, artist, album, stat1 = "", stat2 = "", stat3 = "", 
         # we are in detailed mode
         # write the various lines to the image
         write_new_line (track, detail_fontsize_for_track, "center")
-        write_new_line (artist, detail_fontsize_for_artist, "center")
+        write_new_line (artist, detail_fontsize_for_artist, "center", colour=accent_colour)
         write_new_line (album, detail_fontsize_for_album, "center")
         write_new_line (" ", detail_fontsize_for_gap_before_stats, "left")
         write_new_line (stat1, detail_fontsize_for_stats, "left")
