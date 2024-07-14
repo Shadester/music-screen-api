@@ -16,7 +16,7 @@ log_level = "INFO"
 demaster = True
 
 # Send track and album names to http://demaster.hankapi.com for more advanced track name cleanup
-demaster_query_cloud = False
+demaster_query_cloud = True
 
 ## High-res only settings
 

@@ -147,7 +147,7 @@ def print_text_to_ink(track, artist, album, stat1 = "", stat2 = "", stat3 = "", 
             write_new_line (line, summary_fontsize_for_track, "center", True)       
 
         write_new_line (" ", summary_gap_between_track_and_artist)
-        write_new_line (artist, summary_fontsize_for_artist)
+        write_new_line (artist, summary_fontsize_for_artist, colour=accent_colour)
         write_new_line (" ", summary_gap_between_artist_and_album)
         write_new_line (album, summary_fontsize_for_album)
     
