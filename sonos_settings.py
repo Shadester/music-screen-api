@@ -3,7 +3,7 @@
 ## General settings
 
 # Connection details for `node-sonos-http-api`
-sonos_http_api_address = "192.168.1.232"
+sonos_http_api_address = "192.168.1.31"
 sonos_http_api_port = "5005"
 
 # Location of log file to write in addition to printing to screen. Comment out to disable
