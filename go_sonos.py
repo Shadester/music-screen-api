@@ -14,7 +14,7 @@ if sonos_settings.pi_zero:
     frequency = 1  # number of seconds between checks of the API
     sleep_mode_sheep_to_count = 20
 else:
-    frequency = 0.5
+    frequency = 4
     sleep_mode_sheep_to_count = 10
 sleep_mode_enabled = True
 sleep_mode_frequency = 5
