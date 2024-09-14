@@ -34,7 +34,7 @@ class SonosWebhookHandler(BaseHTTPRequestHandler):
         logging.info("Received webhook. Triggering update.")
         update_display()
 
-def start_webhook_server(port=5006):
+def start_webhook_server(port=8080):
     server_address = ('', port)
     httpd = HTTPServer(server_address, SonosWebhookHandler)
     logging.info(f"Starting webhook server on port {port}")
