@@ -67,7 +67,7 @@ def strip_name_api(full_song_name):
 
     return short_song_name
 
-def strip_name(full_song_name, offline_only_mode=False):
+def strip_name(full_song_name, offline_only_mode=True):
     if offline_only_mode == True:
         # If we are running in offline-only mode then just parse locally
         print ("Just using offline as we are in offline_only_mode")
