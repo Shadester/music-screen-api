@@ -58,7 +58,7 @@ def update_display(source="polling"):
         if current_track != previous_track_name:
             previous_track_name = current_track
             if sonos_settings.demaster:
-                current_track = demaster.strip_name(current_track)
+                current_track = demaster.strip_name(current_track, sonos_settings.demaster_query_cloud)
             log_message += f"New track: {current_track} - {current_artist}"
             ink_printer.print_text_to_ink(current_track, current_artist, current_album)
         else:
