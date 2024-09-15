@@ -7,7 +7,7 @@ import requests
 api_base_url = 'http://demaster.hankapi.com/demaster?format=simple&long_track_name='
 
 # set user settings
-offline_only_mode = False
+offline_only_mode = True
 
 # script
 
