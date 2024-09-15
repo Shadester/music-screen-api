@@ -109,8 +109,7 @@ def main():
         start_webhook_server()
         logging.info("Webhook mode active. Waiting for updates.")
         while True:
-            time.sleep(1)  # Check every second for sleep mode in webhook mode
-            update_display(source="sleep check")
+            time.sleep(3600)  # Sleep for an hour, updates will come via webhooks
     else:
         logging.info("Polling mode active. Checking for updates regularly.")
         while True:
