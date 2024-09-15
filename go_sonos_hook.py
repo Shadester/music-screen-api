@@ -22,7 +22,7 @@ number_of_sheep_counted = 0
 sonos_room = ""
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%H:%M:%S')
 
 # Webhook handler
 class SonosWebhookHandler(BaseHTTPRequestHandler):
@@ -31,61 +31,54 @@ class SonosWebhookHandler(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         self.send_response(200)
         self.end_headers()
-        logging.info("Received webhook. Triggering update.")
         update_display(source="webhook")
+
+    def log_message(self, format, *args):
+        # Suppress default logging from BaseHTTPRequestHandler
+        return
 
 def start_webhook_server(port=8080):
     server_address = ('', port)
     httpd = HTTPServer(server_address, SonosWebhookHandler)
-    logging.info(f"Starting webhook server on port {port}")
+    logging.info(f"Webhook server started on port {port}")
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
 def update_display(source="polling"):
     global previous_track_name, sleep_mode_sleeping, number_of_sheep_counted
 
-    logging.info(f"Updating display. Source: {source}")
-
     current_track, current_artist, current_album, current_image, play_status = sonos_user_data.current(sonos_room)
     
-    logging.info(f"Current state - Track: {current_track}, Artist: {current_artist}, Status: {play_status}")
-
+    log_message = f"{source.capitalize()}: {play_status} - "
     if play_status == "PLAYING":
         if sleep_mode_sleeping:
-            logging.info("Waking up from sleep mode")
-        sleep_mode_sleeping = False
-        number_of_sheep_counted = 0
+            sleep_mode_sleeping = False
+            number_of_sheep_counted = 0
+            log_message += "Waking up. "
 
         if current_track != previous_track_name:
-            logging.info(f"New track detected. Previous: {previous_track_name}, Current: {current_track}")
             previous_track_name = current_track
-
             if sonos_settings.demaster:
-                demastered_track = demaster.strip_name(current_track)
-                logging.info(f"Demastered track name: {demastered_track}")
-                current_track = demastered_track
-
-            logging.info(f"Refreshing screen with new track: {current_track}")
+                current_track = demaster.strip_name(current_track)
+            log_message += f"New track: {current_track} - {current_artist}"
             ink_printer.print_text_to_ink(current_track, current_artist, current_album)
         else:
-            logging.info("No change in track. Skipping screen refresh.")
+            log_message += f"Current track: {current_track} (no change)"
     else:
         if number_of_sheep_counted <= sleep_mode_sheep_to_count:
             number_of_sheep_counted += 1
-            logging.info(f"Counting sheep: {number_of_sheep_counted}/{sleep_mode_sheep_to_count}")
+            log_message += f"Sleeping soon: {number_of_sheep_counted}/{sleep_mode_sheep_to_count}"
+        elif not sleep_mode_sleeping:
+            sleep_mode_sleeping = True
+            previous_track_name = ""
+            log_message += "Entered sleep mode"
+            if sleep_mode_output == "logo":
+                ink_printer.show_image('/home/pi/music-screen-api/sonos-inky.png')
+            else:
+                ink_printer.blank_screen()
         else:
-            if not sleep_mode_sleeping:
-                logging.info("Entering sleep mode")
-                if sleep_mode_output == "logo":
-                    logging.info("Displaying logo")
-                    ink_printer.show_image('/home/pi/music-screen-api/sonos-inky.png')
-                else:
-                    logging.info("Blanking screen")
-                    ink_printer.blank_screen()
-            
-            if sleep_mode_enabled:
-                sleep_mode_sleeping = True
-                previous_track_name = ""
-                logging.info("Sleep mode active")
+            log_message += "Sleep mode active"
+
+    logging.info(log_message)
 
 # Main loop
 def main():
@@ -108,11 +101,11 @@ def main():
 
     if use_webhook:
         start_webhook_server()
-        logging.info("Webhook mode active. Waiting for updates via webhook.")
+        logging.info("Webhook mode active. Waiting for updates.")
         while True:
             time.sleep(3600)  # Sleep for an hour, as updates will come via webhook
     else:
-        logging.info("Polling mode active. Will check for updates regularly.")
+        logging.info("Polling mode active. Checking for updates regularly.")
         while True:
             time.sleep(polling_frequency)
             update_display(source="polling")
