@@ -10,14 +10,15 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # User variables
 polling_frequency = 1 if sonos_settings.pi_zero else 4
-sleep_mode_timeout = 40  # Sleep after 40 seconds of inactivity
-sleep_mode_enabled = True
+pause_sleep_timeout = 5  # Sleep after 5 seconds of PAUSED_PLAYBACK
+inactive_sleep_timeout = 40  # Sleep after 40 seconds of other inactivity
 sleep_mode_output = "logo"  # can also be "blank"
 
 # Global variables
 previous_track_name = ""
 sleep_mode_sleeping = False
 last_activity_time = time.time()
+last_status = "PLAYING"
 sonos_room = ""
 
 # Set up logging
@@ -43,7 +44,7 @@ def start_webhook_server(port=8080):
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
 def update_display(source="polling"):
-    global previous_track_name, sleep_mode_sleeping, last_activity_time
+    global previous_track_name, sleep_mode_sleeping, last_activity_time, last_status
 
     current_track, current_artist, current_album, current_image, play_status = sonos_user_data.current(sonos_room)
     
@@ -52,6 +53,7 @@ def update_display(source="polling"):
 
     if play_status == "PLAYING":
         last_activity_time = current_time
+        last_status = play_status
         if sleep_mode_sleeping:
             sleep_mode_sleeping = False
             log_message += "Waking up. "
@@ -66,18 +68,21 @@ def update_display(source="polling"):
             log_message += f"Current track: {current_track} (no change)"
     else:  # PAUSED_PLAYBACK or other non-playing states
         time_since_activity = current_time - last_activity_time
-        if not sleep_mode_sleeping and time_since_activity >= sleep_mode_timeout:
+        sleep_timeout = pause_sleep_timeout if play_status == "PAUSED_PLAYBACK" else inactive_sleep_timeout
+
+        if not sleep_mode_sleeping and time_since_activity >= sleep_timeout:
             sleep_mode_sleeping = True
             previous_track_name = ""
-            log_message += f"Entered sleep mode after {time_since_activity:.1f} seconds of inactivity. "
-            if sleep_mode_output == "logo":
-                ink_printer.show_image('/home/pi/music-screen-api/sonos-inky.png')
-            else:
-                ink_printer.blank_screen()
+            log_message += f"Entered sleep mode after {time_since_activity:.1f} seconds of {play_status}. "
+            ink_printer.show_image('/home/pi/music-screen-api/sonos-inky.png')
         elif sleep_mode_sleeping:
             log_message += "Sleep mode active"
         else:
-            log_message += f"Inactive for {time_since_activity:.1f} seconds"
+            log_message += f"Inactive ({play_status}) for {time_since_activity:.1f} seconds"
+
+        if last_status != play_status:
+            last_activity_time = current_time  # Reset timer when status changes
+            last_status = play_status
 
     logging.info(log_message)
 
@@ -104,7 +109,7 @@ def main():
         start_webhook_server()
         logging.info("Webhook mode active. Waiting for updates.")
         while True:
-            time.sleep(10)  # Check every 10 seconds for sleep mode in webhook mode
+            time.sleep(1)  # Check every second for sleep mode in webhook mode
             update_display(source="sleep check")
     else:
         logging.info("Polling mode active. Checking for updates regularly.")
