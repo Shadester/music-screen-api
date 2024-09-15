@@ -20,6 +20,7 @@ previous_track_name = ""
 sleep_mode_sleeping = False
 number_of_sheep_counted = 0
 sonos_room = ""
+last_update_time = 0
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%H:%M:%S')
@@ -44,7 +45,12 @@ def start_webhook_server(port=8080):
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
 
 def update_display(source="polling"):
-    global previous_track_name, sleep_mode_sleeping, number_of_sheep_counted
+    global previous_track_name, sleep_mode_sleeping, number_of_sheep_counted, last_update_time
+
+    current_time = time.time()
+    if current_time - last_update_time < sleep_mode_frequency and source == "webhook":
+        return  # Ignore frequent webhook updates
+    last_update_time = current_time
 
     current_track, current_artist, current_album, current_image, play_status = sonos_user_data.current(sonos_room)
     
@@ -63,18 +69,19 @@ def update_display(source="polling"):
             ink_printer.print_text_to_ink(current_track, current_artist, current_album)
         else:
             log_message += f"Current track: {current_track} (no change)"
-    else:
-        if number_of_sheep_counted <= sleep_mode_sheep_to_count:
+    else:  # PAUSED_PLAYBACK or other non-playing states
+        if not sleep_mode_sleeping:
             number_of_sheep_counted += 1
-            log_message += f"Sleeping soon: {number_of_sheep_counted}/{sleep_mode_sheep_to_count}"
-        elif not sleep_mode_sleeping:
-            sleep_mode_sleeping = True
-            previous_track_name = ""
-            log_message += "Entered sleep mode"
-            if sleep_mode_output == "logo":
-                ink_printer.show_image('/home/pi/music-screen-api/sonos-inky.png')
+            if number_of_sheep_counted > sleep_mode_sheep_to_count:
+                sleep_mode_sleeping = True
+                previous_track_name = ""
+                log_message += "Entered sleep mode. "
+                if sleep_mode_output == "logo":
+                    ink_printer.show_image('/home/pi/music-screen-api/sonos-inky.png')
+                else:
+                    ink_printer.blank_screen()
             else:
-                ink_printer.blank_screen()
+                log_message += f"Sleeping soon: {number_of_sheep_counted}/{sleep_mode_sheep_to_count}"
         else:
             log_message += "Sleep mode active"
 
