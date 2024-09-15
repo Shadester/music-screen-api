@@ -9,7 +9,7 @@ import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # User variables
-frequency = 1 if sonos_settings.pi_zero else 4
+polling_frequency = 1 if sonos_settings.pi_zero else 4
 sleep_mode_sheep_to_count = 20 if sonos_settings.pi_zero else 10
 sleep_mode_enabled = True
 sleep_mode_frequency = 5
@@ -101,18 +101,21 @@ def main():
         logging.info("Pausing for 60 seconds on startup to let pi zero catch up")
         time.sleep(60)
 
-    if getattr(sonos_settings, 'use_webhook', False):
+    use_webhook = getattr(sonos_settings, 'use_webhook', False)
+
+    # Initial check on startup
+    update_display(source="initial")
+
+    if use_webhook:
         start_webhook_server()
-
-    while True:
-        update_display(source="polling")
-
-        if sleep_mode_sleeping:
-            logging.info(f"Sleeping for {sleep_mode_frequency} seconds (sleep mode)")
-            time.sleep(sleep_mode_frequency)
-        else:
-            logging.info(f"Waiting for {frequency} seconds before next poll")
-            time.sleep(frequency)
+        logging.info("Webhook mode active. Waiting for updates via webhook.")
+        while True:
+            time.sleep(3600)  # Sleep for an hour, as updates will come via webhook
+    else:
+        logging.info("Polling mode active. Will check for updates regularly.")
+        while True:
+            time.sleep(polling_frequency)
+            update_display(source="polling")
 
 if __name__ == "__main__":
     main()
