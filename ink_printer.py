@@ -48,6 +48,19 @@ else:
 display_width = inky_display.WIDTH
 display_height = inky_display.HEIGHT
 
+# this function calculates optimal font size to fit text on one line
+def calculate_optimal_font_size(text, default_font_size, max_width, min_font_size=16):
+    font_size = default_font_size
+    font = ImageFont.truetype(SourceSansProSemibold, font_size)
+    text_width = font.getsize(text)[0]
+    
+    while text_width > max_width and font_size > min_font_size:
+        font_size -= 1
+        font = ImageFont.truetype(SourceSansProSemibold, font_size)
+        text_width = font.getsize(text)[0]
+    
+    return font_size
+
 # this function prints a new line to the image
 def write_new_line(text_to_write, font_size, alignment = "center", reflow=False, colour=foreground_colour):
     global line_y
@@ -111,31 +124,9 @@ def print_text_to_ink(track, artist, album, stat1 = "", stat2 = "", stat3 = "", 
     if stat2 == "":
         # we are in summary mode
 
-        # sometimes the track name is too long to show so we need to reflow it - work out how to do that here
-        # set font for track
-        font = ImageFont.truetype(SourceSansProSemibold, summary_fontsize_for_track)
-
-        # split the track into lines
-        words = track.split (" ")
-        reflowed = ""
-        line_length = 0
-
-        for i in range(len(words)):
-            word = words[i] + " "
-            word_length = font.getsize(word)[0]
-            line_length += word_length
-
-            if line_length < display_width:
-                reflowed += word
-            else:
-                line_length = word_length
-                reflowed = reflowed[:-1] + "\n " + word
-        
-        track = reflowed
-
-        # work out how many lines in the track string
-        number_of_track_lines = len(track.splitlines())
-        print ("Track name is split over " + str(number_of_track_lines) + " lines")
+        # calculate optimal font size for track to fit on one line
+        optimal_track_font_size = calculate_optimal_font_size(track, summary_fontsize_for_track, display_width - (left_padding * 2))
+        print(f"Track font size adjusted from {summary_fontsize_for_track} to {optimal_track_font_size}")
 
         # write the various lines to the image
         write_new_line (" ", summary_top_gap)
@@ -143,13 +134,19 @@ def print_text_to_ink(track, artist, album, stat1 = "", stat2 = "", stat3 = "", 
         if artist == "" and album == "":
             write_new_line (" ", top_padding_extra_for_radio)
 
-        for line in track.splitlines():
-            write_new_line (line, summary_fontsize_for_track, "center", True)       
+        write_new_line (track, optimal_track_font_size, "center")
 
         write_new_line (" ", summary_gap_between_track_and_artist)
-        write_new_line (artist, summary_fontsize_for_artist, colour=accent_colour)
+        
+        # calculate optimal font size for artist to fit on one line
+        optimal_artist_font_size = calculate_optimal_font_size(artist, summary_fontsize_for_artist, display_width - (left_padding * 2))
+        write_new_line (artist, optimal_artist_font_size, colour=accent_colour)
+        
         write_new_line (" ", summary_gap_between_artist_and_album)
-        write_new_line (album, summary_fontsize_for_album)
+        
+        # calculate optimal font size for album to fit on one line
+        optimal_album_font_size = calculate_optimal_font_size(album, summary_fontsize_for_album, display_width - (left_padding * 2))
+        write_new_line (album, optimal_album_font_size)
     
     if rotate == 180:
         img = img.rotate(180)
